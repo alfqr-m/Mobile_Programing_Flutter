@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../widgets/profile_photo.dart';
 import '../widgets/profile_info.dart';
 import '../widgets/social_media_row.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -14,6 +14,20 @@ class ProfileScreen extends StatelessWidget {
         title: const Text('Profil Mahasiswa'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Tentang Aplikasi',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AboutScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
