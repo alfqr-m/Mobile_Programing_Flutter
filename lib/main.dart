@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/profile_screen.dart';
+import 'screens/registration_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,13 +11,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Profil Mahasiswa',
+      title: 'Form Registrasi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const ProfileScreen(),
+      home: const RegistrationScreen(),
     );
   }
 }
