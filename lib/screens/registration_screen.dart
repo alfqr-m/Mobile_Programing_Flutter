@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../widgets/custom_text_field.dart';
-
-/// Level kekuatan password.
-enum PasswordStrength { empty, weak, medium, strong }
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -16,8 +12,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _birthDateController = TextEditingController();
+  final _phoneController = TextEditingController(); // Latihan 1
+  final _birthDateController = TextEditingController(); // Latihan 2
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -25,13 +21,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
-  // State tambahan
-  DateTime? _selectedBirthDate;
-  String? _selectedGender;
-  bool _acceptedTerms = false;
-  PasswordStrength _passwordStrength = PasswordStrength.empty;
+  DateTime? _birthDate; // Latihan 2
+  String? _gender; // Latihan 3
+  bool _agreeTerms = false; // Latihan 4
+  bool _showTermsError = false; // Latihan 4
 
-  static const List<String> _genderOptions = ['Laki-laki', 'Perempuan'];
+  // Latihan 5: indikator kekuatan password
+  double _strength = 0;
+  String _strengthLabel = '';
+  Color _strengthColor = Colors.grey;
 
   @override
   void dispose() {
@@ -67,36 +65,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return null;
   }
 
-  // Validasi nomor telepon
+  // Latihan 1: validasi nomor telepon
   String? _validatePhone(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) {
       return 'Nomor telepon tidak boleh kosong';
     }
-    final phone = value.trim();
-    if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      return 'Nomor telepon hanya boleh berisi angka';
+    if (!RegExp(r'^[0-9]+$').hasMatch(v)) {
+      return 'Nomor telepon hanya boleh angka';
     }
-    if (phone.length < 10) {
-      return 'Nomor telepon minimal 10 digit';
-    }
-    if (phone.length > 13) {
-      return 'Nomor telepon maksimal 13 digit';
-    }
-    return null;
-  }
-
-  // Validasi tanggal lahir
-  String? _validateBirthDate(String? value) {
-    if (_selectedBirthDate == null) {
-      return 'Tanggal lahir tidak boleh kosong';
-    }
-    return null;
-  }
-
-  // Validasi jenis kelamin
-  String? _validateGender(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Jenis kelamin harus dipilih';
+    if (v.length < 10 || v.length > 13) {
+      return 'Nomor telepon harus 10-13 digit';
     }
     return null;
   }
@@ -129,100 +108,107 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return null;
   }
 
-  // Validasi syarat & ketentuan
-  String? _validateTerms(bool? value) {
-    if (value != true) {
-      return 'Anda harus menyetujui syarat dan ketentuan';
-    }
-    return null;
-  }
-
-  // Hitung kekuatan password
-  PasswordStrength _calculateStrength(String password) {
-    if (password.isEmpty) return PasswordStrength.empty;
-    if (password.length < 8) return PasswordStrength.weak;
-
-    final hasUpper = password.contains(RegExp(r'[A-Z]'));
-    final hasLower = password.contains(RegExp(r'[a-z]'));
-    final hasDigit = password.contains(RegExp(r'[0-9]'));
-    final hasSymbol = password.contains(RegExp(r'[^A-Za-z0-9]'));
-    final hasLetter = hasUpper || hasLower;
-
-    if (hasUpper && hasLower && hasDigit && hasSymbol) {
-      return PasswordStrength.strong;
-    }
-    if (hasLetter && hasDigit) {
-      return PasswordStrength.medium;
-    }
-    return PasswordStrength.weak;
-  }
-
-  // Format tanggal: dd/MM/yyyy
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
-  }
-
-  // Tampilkan date picker
+  // Latihan 2: pilih tanggal lahir
   Future<void> _pickBirthDate() async {
-    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedBirthDate ?? DateTime(now.year - 17, now.month, now.day),
-      firstDate: DateTime(1900),
-      lastDate: now,
-      helpText: 'Pilih Tanggal Lahir',
+      initialDate: _birthDate ?? DateTime(2005),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
     );
-
     if (picked != null) {
       setState(() {
-        _selectedBirthDate = picked;
-        _birthDateController.text = _formatDate(picked);
+        _birthDate = picked;
+        _birthDateController.text =
+            '${picked.day.toString().padLeft(2, '0')}-'
+            '${picked.month.toString().padLeft(2, '0')}-'
+            '${picked.year}';
       });
     }
+  }
+
+  // Latihan 5: hitung kekuatan password
+  void _checkStrength(String v) {
+    final hasUpper = v.contains(RegExp(r'[A-Z]'));
+    final hasLower = v.contains(RegExp(r'[a-z]'));
+    final hasDigit = v.contains(RegExp(r'[0-9]'));
+    final hasSymbol = v.contains(RegExp(r'[^A-Za-z0-9]'));
+
+    double s;
+    String l;
+    Color c;
+    if (v.isEmpty) {
+      s = 0;
+      l = '';
+      c = Colors.grey;
+    } else if (v.length >= 8 && hasUpper && hasLower && hasDigit && hasSymbol) {
+      s = 1.0;
+      l = 'Kuat';
+      c = Colors.green;
+    } else if (v.length >= 8 && hasDigit && (hasUpper || hasLower)) {
+      s = 0.66;
+      l = 'Sedang';
+      c = Colors.orange;
+    } else {
+      s = 0.33;
+      l = 'Lemah';
+      c = Colors.red;
+    }
+
+    // Least privilege: setState hanya jika tampilan memang berubah
+    if (l == _strengthLabel) return;
+    setState(() {
+      _strength = s;
+      _strengthLabel = l;
+      _strengthColor = c;
+    });
   }
 
   // Handler submit form
   void _submitForm() {
-    if (_formKey.currentState!.validate()) {
+    final isFormValid = _formKey.currentState!.validate();
+
+    // Latihan 4: checkbox wajib dicentang
+    if (!_agreeTerms) {
       setState(() {
-        _isLoading = true;
-      });
-
-      // Simulasi proses registrasi
-      Future.delayed(const Duration(seconds: 2), () {
-        if (!mounted) return;
-
-        setState(() {
-          _isLoading = false;
-        });
-
-        // Tampilkan dialog sukses
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Registrasi Berhasil'),
-            content: Text(
-              'Selamat, ${_nameController.text}!\n'
-              'Email: ${_emailController.text}\n'
-              'No. Telepon: ${_phoneController.text}\n'
-              'Tanggal Lahir: ${_birthDateController.text}\n'
-              'Jenis Kelamin: $_selectedGender',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _resetForm();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        _showTermsError = true;
       });
     }
+    if (!isFormValid || !_agreeTerms) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Simulasi proses registrasi
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return; // layar sudah ditutup, hentikan
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Tampilkan dialog sukses
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Registrasi Berhasil'),
+          content: Text(
+            'Selamat, ${_nameController.text}!\n'
+            'Email: ${_emailController.text}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _resetForm();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   // Reset form
@@ -235,65 +221,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _passwordController.clear();
     _confirmPasswordController.clear();
     setState(() {
-      _selectedBirthDate = null;
-      _selectedGender = null;
-      _acceptedTerms = false;
-      _passwordStrength = PasswordStrength.empty;
+      _birthDate = null;
+      _gender = null;
+      _agreeTerms = false;
+      _showTermsError = false;
+      _strength = 0;
+      _strengthLabel = '';
+      _strengthColor = Colors.grey;
     });
-  }
-
-  // Widget indikator kekuatan password
-  Widget _buildPasswordStrengthIndicator() {
-    late final String label;
-    late final Color color;
-    late final double value;
-
-    switch (_passwordStrength) {
-      case PasswordStrength.empty:
-        return const SizedBox.shrink();
-      case PasswordStrength.weak:
-        label = 'Lemah';
-        color = Colors.red;
-        value = 0.33;
-        break;
-      case PasswordStrength.medium:
-        label = 'Sedang';
-        color = Colors.orange;
-        value = 0.66;
-        break;
-      case PasswordStrength.strong:
-        label = 'Kuat';
-        color = Colors.green;
-        value = 1.0;
-        break;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: value,
-                minHeight: 6,
-                color: color,
-                backgroundColor: Colors.grey[300],
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -309,6 +244,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -358,29 +294,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   validator: _validateEmail,
                 ),
 
-                // Field Nomor Telepon
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(13),
-                    ],
-                    decoration: InputDecoration(
-                      labelText: 'Nomor Telepon',
-                      hintText: 'Contoh: 081234567890',
-                      prefixIcon: const Icon(Icons.phone),
-                      border: const OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.grey[50],
-                    ),
-                    validator: _validatePhone,
-                  ),
+                // Latihan 1: Field Nomor Telepon
+                CustomTextField(
+                  controller: _phoneController,
+                  label: 'Nomor Telepon',
+                  hint: '08xxxxxxxxxx',
+                  prefixIcon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                  validator: _validatePhone,
                 ),
 
-                // Field Tanggal Lahir
+                // Latihan 2: Field Tanggal Lahir
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: TextFormField(
@@ -395,15 +319,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    validator: _validateBirthDate,
+                    validator: (v) => (v == null || v.isEmpty)
+                        ? 'Tanggal lahir wajib dipilih'
+                        : null,
                   ),
                 ),
 
-                // Dropdown Jenis Kelamin
+                // Latihan 3: Dropdown Jenis Kelamin
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    // ignore: deprecated_member_use
+                    value: _gender,
                     decoration: InputDecoration(
                       labelText: 'Jenis Kelamin',
                       prefixIcon: const Icon(Icons.wc),
@@ -411,21 +338,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    hint: const Text('Pilih jenis kelamin'),
-                    items: _genderOptions
-                        .map(
-                          (gender) => DropdownMenuItem<String>(
-                            value: gender,
-                            child: Text(gender),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedGender = value;
-                      });
-                    },
-                    validator: _validateGender,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Laki-laki',
+                        child: Text('Laki-laki'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Perempuan',
+                        child: Text('Perempuan'),
+                      ),
+                    ],
+                    onChanged: (v) => setState(() => _gender = v),
+                    validator: (v) =>
+                        v == null ? 'Jenis kelamin wajib dipilih' : null,
                   ),
                 ),
 
@@ -455,17 +380,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       fillColor: Colors.grey[50],
                     ),
                     obscureText: _obscurePassword,
-                    onChanged: (value) {
-                      setState(() {
-                        _passwordStrength = _calculateStrength(value);
-                      });
-                    },
+                    onChanged: _checkStrength, // Latihan 5
                     validator: _validatePassword,
                   ),
                 ),
 
-                // Indikator kekuatan password
-                _buildPasswordStrengthIndicator(),
+                // Latihan 5: Indikator kekuatan password
+                if (_strengthLabel.isNotEmpty) ...[
+                  LinearProgressIndicator(
+                    value: _strength,
+                    color: _strengthColor,
+                    backgroundColor: Colors.grey[300],
+                    minHeight: 6,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Kekuatan password: $_strengthLabel',
+                    style: TextStyle(color: _strengthColor, fontSize: 12),
+                  ),
+                ],
 
                 // Field Konfirmasi Password
                 Padding(
@@ -497,45 +430,25 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
 
-                // Checkbox Syarat & Ketentuan
-                FormField<bool>(
-                  initialValue: _acceptedTerms,
-                  validator: _validateTerms,
-                  builder: (state) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CheckboxListTile(
-                          value: _acceptedTerms,
-                          onChanged: (value) {
-                            setState(() {
-                              _acceptedTerms = value ?? false;
-                            });
-                            state.didChange(_acceptedTerms);
-                          },
-                          title: const Text(
-                            'Saya menyetujui syarat dan ketentuan yang berlaku',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.deepPurple,
-                        ),
-                        if (state.hasError)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 12),
-                            child: Text(
-                              state.errorText!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
+                // Latihan 4: Checkbox Syarat & Ketentuan
+                CheckboxListTile(
+                  value: _agreeTerms,
+                  onChanged: (v) => setState(() {
+                    _agreeTerms = v ?? false;
+                    if (_agreeTerms) _showTermsError = false;
+                  }),
+                  title: const Text('Saya setuju dengan Syarat & Ketentuan'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
                 ),
+                if (_showTermsError)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 12),
+                    child: Text(
+                      'Anda harus menyetujui Syarat & Ketentuan',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
                 const SizedBox(height: 24),
 
                 // Tombol Submit
