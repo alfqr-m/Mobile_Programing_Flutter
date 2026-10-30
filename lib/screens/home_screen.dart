@@ -14,6 +14,16 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Home'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        actions: [
+          // Latihan 1: tombol toggle tema
+          IconButton(
+            icon: Icon(
+              provider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            tooltip: provider.isDarkMode ? 'Mode terang' : 'Mode gelap',
+            onPressed: provider.toggleTheme,
+          ),
+        ],
       ),
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -71,6 +81,12 @@ class HomeScreen extends StatelessWidget {
                         label: const Text('Login / Daftar'),
                       ),
                     ],
+                    // Latihan 2: tampilkan counter kunjungan
+                    const SizedBox(height: 32),
+                    Text(
+                      'Aplikasi ini sudah dibuka ${provider.visitCount} kali',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
